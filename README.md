@@ -5,7 +5,7 @@
 > A Neo4j knowledge graph that reveals the structural architecture of political money in the Des Moines metropolitan area — not who wrote the biggest checks, but who holds the network together.
 
 Built on public data from the Iowa Ethics and Campaign Disclosure Board.  
-A [JL Intelligence](https://jeffreylong.net) portfolio project.
+A [Jeffrey Long](https://jeffreylong.net) portfolio project.
 
 ---
 
