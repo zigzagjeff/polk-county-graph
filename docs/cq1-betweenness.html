@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Who holds the network together? — Polk County Political Contribution Graph</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #ffffff;
+    --bg-secondary: #f5f4f0;
+    --text-primary: #1a1a18;
+    --text-secondary: #5f5e5a;
+    --text-tertiary: #888780;
+    --border: rgba(0,0,0,0.10);
+    --amber-border: #BA7517;
+    --grid: rgba(0,0,0,0.07);
+    --tick: #888780;
+    --radius: 8px;
+    --radius-lg: 12px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1c1c1a;
+      --bg-secondary: #262624;
+      --text-primary: #e8e6df;
+      --text-secondary: #b4b2a9;
+      --text-tertiary: #888780;
+      --border: rgba(255,255,255,0.10);
+      --amber-border: #EF9F27;
+      --grid: rgba(255,255,255,0.07);
+      --tick: #888780;
+    }
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text-primary);
+    line-height: 1.6;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 48px 24px 80px;
+  }
+
+  .eyebrow {
+    font-size: 11px;
+    letter-spacing: .07em;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  h1 {
+    font-size: 32px;
+    font-weight: 500;
+    line-height: 1.2;
+    margin-bottom: 10px;
+    color: var(--text-primary);
+  }
+
+  .lede {
+    font-size: 15px;
+    color: var(--text-secondary);
+    line-height: 1.7;
+    max-width: 640px;
+    margin-bottom: 32px;
+  }
+
+  .metrics {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 40px;
+  }
+
+  .metric {
+    background: var(--bg-secondary);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+  }
+
+  .metric-label { font-size: 11px; color: var(--text-secondary); margin-bottom: 4px; }
+  .metric-value { font-size: 20px; font-weight: 500; color: var(--text-primary); }
+  .metric-sub   { font-size: 11px; color: var(--text-tertiary); margin-top: 3px; }
+
+  .section-label { font-size: 13px; font-weight: 500; color: var(--text-primary); margin-bottom: 6px; margin-top: 40px; }
+  .section-sub   { font-size: 12px; color: var(--text-secondary); margin-bottom: 12px; line-height: 1.5; }
+
+  .legend {
+    display: flex; gap: 20px; flex-wrap: wrap;
+    font-size: 12px; color: var(--text-secondary);
+    align-items: center; margin-bottom: 10px;
+  }
+  .legend-dot  { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+  .legend-item { display: flex; align-items: center; gap: 5px; }
+
+  .chart-wrap { position: relative; width: 100%; }
+
+  .callout {
+    border-left: 3px solid var(--amber-border);
+    padding: 12px 16px;
+    margin: 28px 0;
+    background: var(--bg-secondary);
+    border-radius: 0 var(--radius) var(--radius) 0;
+  }
+  .callout p { font-size: 14px; color: var(--text-secondary); line-height: 1.7; }
+  .callout strong { font-weight: 500; color: var(--text-primary); }
+
+  .divider { border: none; border-top: 0.5px solid var(--border); margin: 40px 0; }
+
+  footer { font-size: 11px; color: var(--text-tertiary); line-height: 1.9; margin-top: 48px; }
+  footer a { color: var(--text-secondary); text-decoration: underline; text-underline-offset: 2px; }
+
+  @media (max-width: 560px) {
+    h1 { font-size: 24px; }
+    .metrics { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<p class="eyebrow">Polk County · Iowa · Campaign Finance · 2003–2025</p>
+<h1>Who holds the network together?</h1>
+<p class="lede">Dollar analysis sees who writes the biggest checks. Graph analysis sees who connects the network. Betweenness centrality measures how often a donor sits on the shortest path between other donors and committees — structural indispensability, not checkbook size.</p>
+
+<div class="metrics">
+  <div class="metric">
+    <p class="metric-label">Dataset</p>
+    <p class="metric-value">Johnston, Iowa</p>
+    <p class="metric-sub">Development · Cycle 1</p>
+  </div>
+  <div class="metric">
+    <p class="metric-label">Donors in graph</p>
+    <p class="metric-value">4,461</p>
+    <p class="metric-sub">Across 1,183 committees</p>
+  </div>
+  <div class="metric">
+    <p class="metric-label">Contribution edges</p>
+    <p class="metric-value">10,537</p>
+    <p class="metric-sub">20 Louvain communities</p>
+  </div>
+</div>
+
+<p class="section-label">Betweenness vs. dollars spent</p>
+<p class="section-sub">Each bubble is a donor. X axis: total dollars given (log scale). Y axis: betweenness score. Bubble size: number of committees reached. Upper-left quadrant = bridge donors — structural influence disproportionate to spending.</p>
+
+<div class="legend">
+  <span class="legend-item"><span class="legend-dot" style="background:rgba(186,117,23,.85)"></span>Individual</span>
+  <span class="legend-item"><span class="legend-dot" style="background:rgba(24,95,165,.85)"></span>Organization / PAC</span>
+  <span style="color:var(--text-tertiary)">· Bubble size = committees reached</span>
+</div>
+
+<div class="chart-wrap" style="height:500px">
+  <canvas id="scatter"></canvas>
+</div>
+
+<div class="callout">
+  <p><strong>Bridge donors</strong> sit in the upper-left on the scatter — exercising structural power out of proportion to their spending. Amy Campbell, giving $14,096 over her career, ranks #3 in Johnston by betweenness — above donors who gave 50× more. The graph sees what the spreadsheet misses.</p>
+</div>
+
+<hr class="divider">
+
+<p class="section-label">Top 10 by structural importance</p>
+<p class="section-sub">Ranked by betweenness centrality score. Note that rank #3 (Amy Campbell, Individual) and rank #8 (Morgan Molden, Individual) outrank donors who gave orders of magnitude more.</p>
+
+<div class="chart-wrap" style="height:460px;margin-top:8px">
+  <canvas id="bar"></canvas>
+</div>
+
+<hr class="divider">
+
+<p class="section-label">What this means</p>
+<p class="lede" style="max-width:none">Standard campaign finance reporting counts dollars. This graph asks a different question: if a donor stopped giving, how much would the network fragment? Betweenness centrality answers that. The highest-scoring donors are the load-bearing walls of Johnston's political funding architecture — not necessarily its biggest spenders.</p>
+<p class="lede" style="max-width:none;margin-top:12px">This is a development dataset (Johnston, Iowa). The full Des Moines analysis — 33,258 donors, 249,923 contributions — is the portfolio release.</p>
+
+<footer>
+  <p>Source: <a href="https://ethics.iowa.gov" target="_blank">Iowa Ethics and Campaign Disclosure Board</a> · Public data, 2003–2025</p>
+  <p>Graph: <a href="https://github.com/zigzagjeff/polk-county-graph" target="_blank">polk-county-graph</a> · Neo4j AuraDB · Betweenness via NetworkX · Johnston development dataset</p>
+  <p>A <a href="https://jeffreylong.net" target="_blank">JL Intelligence</a> portfolio project · Follow the build: <a href="https://beingfuturepresent.com" target="_blank">Substack</a></p>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+(function(){
+  const dk = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const tc = dk ? '#B4B2A9' : '#5F5E5A';
+  const gc = dk ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)';
+  const ic = dk ? 'rgba(239,159,39,0.70)' : 'rgba(186,117,23,0.75)';
+  const ib = dk ? '#EF9F27' : '#BA7517';
+  const oc = dk ? 'rgba(55,138,221,0.70)' : 'rgba(24,95,165,0.75)';
+  const ob = dk ? '#378ADD' : '#185FA5';
+
+  const ind = [
+    {x:14096,  y:.0356, r:9.7,  label:'Amy Campbell',   lx:-92, ly:-16},
+    {x:8172,   y:.0237, r:10.3, label:'Karin Derry',     lx:8,   ly:-18},
+    {x:724018, y:.0220, r:8.1,  label:'Kurt Rasmussen',  lx:8,   ly:18},
+    {x:9173,   y:.0213, r:7.6},
+    {x:2266,   y:.0210, r:7.6,  label:'Morgan Molden',   lx:-92, ly:-14},
+    {x:24535,  y:.0176, r:10.6},
+    {x:7171,   y:.0173, r:9.0},
+    {x:2207,   y:.0166, r:7.9},
+    {x:15590,  y:.0163, r:8.7},
+    {x:15792,  y:.0148, r:9.5},
+    {x:30507,  y:.0136, r:10.5},
+    {x:10140,  y:.0135, r:9.2},
+    {x:1040,   y:.0126, r:5.5},
+    {x:2022,   y:.0126, r:5.9},
+    {x:10412,  y:.0108, r:8.5},
+    {x:405,    y:.0101, r:4.3},
+    {x:2675,   y:.0096, r:5.7},
+    {x:415,    y:.0095, r:4.4},
+    {x:65515,  y:.0095, r:8.6},
+    {x:574,    y:.0092, r:5.0},
+    {x:10754,  y:.0088, r:7.3},
+    {x:13955,  y:.0086, r:7.7},
+    {x:4407,   y:.0086, r:8.5},
+  ];
+
+  const org = [
+    {x:2993217, y:.1547, r:20,   label:'BUILD',            lx:-62, ly:-26},
+    {x:231025,  y:.0711, r:18,   label:'Iowa Dealers PAC', lx:8,   ly:-24},
+    {x:569700,  y:.0291, r:17,   label:'Iowa Corn Growers',lx:8,   ly:-20},
+    {x:176150,  y:.0189, r:13},
+    {x:220880,  y:.0186, r:14},
+    {x:220627,  y:.0152, r:13.7},
+    {x:15512,   y:.0146, r:8.7},
+  ];
+
+  const labelPlugin = {
+    id: 'labelPlugin',
+    afterDraw(chart) {
+      const ctx = chart.ctx;
+      const ca  = chart.chartArea;
+      const qx  = chart.scales.x.getPixelForValue(50000);
+      const qy  = chart.scales.y.getPixelForValue(0.022);
+
+      ctx.save();
+      ctx.setLineDash([3,5]);
+      ctx.strokeStyle = dk ? 'rgba(255,255,255,0.13)' : 'rgba(0,0,0,0.12)';
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(qx, ca.top);  ctx.lineTo(qx, ca.bottom); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(ca.left, qy); ctx.lineTo(ca.right, qy);  ctx.stroke();
+      ctx.setLineDash([]);
+
+      ctx.font = '10px monospace';
+      ctx.fillStyle = dk ? 'rgba(255,255,255,0.22)' : 'rgba(0,0,0,0.18)';
+      ctx.fillText('Bridge donors',      ca.left + 6, ca.top + 14);
+      ctx.fillText('Network anchors',    qx + 6,      ca.top + 14);
+      ctx.fillText('Local contributors', ca.left + 6, ca.bottom - 6);
+      ctx.fillText('Checkbook donors',   qx + 6,      ca.bottom - 6);
+
+      ctx.font = '10.5px -apple-system, BlinkMacSystemFont, system-ui, sans-serif';
+      ctx.fillStyle = tc;
+      chart.data.datasets.forEach((ds, di) => {
+        const meta = chart.getDatasetMeta(di);
+        ds.data.forEach((pt, i) => {
+          if (!pt.label) return;
+          const el = meta.data[i];
+          ctx.fillText(pt.label, el.x + (pt.lx || 8), el.y + (pt.ly || 0));
+        });
+      });
+      ctx.restore();
+    }
+  };
+
+  new Chart(document.getElementById('scatter'), {
+    type: 'bubble',
+    plugins: [labelPlugin],
+    data: {
+      datasets: [
+        {label:'Individual',   data: ind, backgroundColor: ic, borderColor: ib, borderWidth: 1.5},
+        {label:'Organization', data: org, backgroundColor: oc, borderColor: ob, borderWidth: 1.5}
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      layout: { padding: { top: 28, right: 20, bottom: 8, left: 8 } },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label(c) {
+              const d = c.raw;
+              return `${c.dataset.label} · $${d.x.toLocaleString()} · score: ${d.y.toFixed(4)}`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          type: 'logarithmic', min: 100, max: 5000000,
+          title: { display: true, text: 'Total given ($, log scale)', color: tc, font: { size: 11 } },
+          ticks: {
+            color: tc, font: { size: 10 },
+            callback(v) {
+              return {100:'$100',1000:'$1K',10000:'$10K',100000:'$100K',1000000:'$1M'}[v] || null;
+            }
+          },
+          grid: { color: gc }
+        },
+        y: {
+          min: 0, max: 0.175,
+          title: { display: true, text: 'Betweenness score', color: tc, font: { size: 11 } },
+          ticks: { color: tc, font: { size: 10 }, callback: v => v.toFixed(3) },
+          grid: { color: gc }
+        }
+      }
+    }
+  });
+
+  const bLabels = ['Iowa Renewable Fuels','Iowa NECA PAC','Morgan Molden','Justin Hupfer','Kurt Rasmussen','Karin Derry','Iowa Corn Growers','Amy Campbell','Iowa Dealers PAC','BUILD'];
+  const bValues = [.0186,.0189,.0210,.0213,.0220,.0237,.0291,.0356,.0711,.1547];
+  const bTypes  = ['org','org','ind','ind','ind','ind','org','ind','org','org'];
+
+  new Chart(document.getElementById('bar'), {
+    type: 'bar',
+    data: {
+      labels: bLabels,
+      datasets: [{
+        data: bValues,
+        backgroundColor: bTypes.map(t => t === 'ind' ? ic : oc),
+        borderColor:     bTypes.map(t => t === 'ind' ? ib : ob),
+        borderWidth: 1,
+        borderRadius: 2
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      layout: { padding: { right: 40 } },
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: c => `Score: ${c.raw.toFixed(4)}` } }
+      },
+      scales: {
+        x: {
+          min: 0,
+          title: { display: true, text: 'Betweenness score', color: tc, font: { size: 11 } },
+          ticks: { color: tc, font: { size: 10 }, callback: v => v.toFixed(3) },
+          grid: { color: gc }
+        },
+        y: {
+          ticks: { color: tc, font: { size: 11 } },
+          grid: { color: 'transparent' }
+        }
+      }
+    }
+  });
+})();
+</script>
+</body>
+</html>
