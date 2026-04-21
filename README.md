@@ -1,5 +1,3 @@
-# polk-county-graph
-
 # Polk County Political Contribution Graph
 
 > **391,881 contributions. 54,059 donors. 2,764 committees. 2003–2025.**  
@@ -10,29 +8,78 @@ A [Jeffrey Long](https://jeffreylong.net) portfolio project.
 
 ---
 
+## The Finding
+
+Standard campaign finance analysis ranks donors by dollars. This graph ranks them by structural indispensability — betweenness centrality, the measure of how many paths through the network run through a given node.
+
+The result surfaces a category of donor that dollar-based analysis misses entirely:
+
+| Donor | Betweenness Score | Total Given | Committees |
+|---|---|---|---|
+| Republican Party of Iowa | 0.0260 | $63,891,249 | 541 |
+| **Dolan, MJ** | **0.0252** | **$41,435** | **183** |
+| Iowa Democratic Party | 0.0188 | $49,356,831 | 417 |
+| **Cacciatore, John** | **0.0164** | **$49,238** | **60** |
+| AFSCME Iowa Council 61 | 0.0118 | $4,217,064 | 323 |
+| **Maloney, Mary** | **0.0099** | **$5,206** | **38** |
+
+MJ Dolan has nearly identical structural influence to the Republican Party of Iowa while spending 1,500× less money. Maloney and Cacciatore hold significant network positions on budgets under $50K. These are bridge donors — people whose participation connects otherwise-disconnected communities. A relational database cannot find them. A graph can.
+
+---
+
 ## What This Graph Answers
 
-Standard campaign finance analysis counts dollars. This graph asks structural questions that relational databases cannot answer.
+| CQ | Question | Method |
+|---|---|---|
+| CQ1 | Who are the structurally indispensable donors — those whose removal most fragments the network? | Betweenness Centrality |
+| CQ5 | Which candidates have concentrated single-community funding (vulnerable to donor exit) versus genuinely diversified support? | Louvain Community Detection |
 
-| CQ   | Question                                                     | Method                      | Status      |
-| ---- | ------------------------------------------------------------ | --------------------------- | ----------- |
-| CQ1  | Who are the structurally indispensable donors — those whose removal most fragments the network? | Betweenness Centrality      | **Cycle 1** |
-| CQ5  | Which candidates have concentrated single-community funding (vulnerable to exit) versus genuinely diversified structural support? | Louvain Community Detection | **Cycle 1** |
+Both algorithms run in the ETL transformation layer via NetworkX and are written back as node properties before loading to Neo4j — no GDS required.
 
-Both algorithms are computed in the ETL transformation layer using NetworkX and written back as node properties before loading to Neo4j.
+---
+
+## Community Structure (CQ5)
+
+Louvain community detection found **258 communities** across the Johnston network. The top 5 each contain 3,000–4,800 donors and represent the network's structural backbone. A long tail of 150+ singleton communities captures isolated donors with no cross-committee participation.
+
+| Community | Donors |
+|---|---|
+| 0 | 4,772 |
+| 1 | 4,705 |
+| 2 | 4,391 |
+| 3 | 4,284 |
+| 4 | 3,229 |
+| … 253 others | … |
+
+A committee drawing donors exclusively from one community is structurally fragile — its support base exits together. A committee with donors distributed across many communities has genuinely diversified structural support. The Cypher queries in [`cypher/`](./cypher/) surface both patterns.
+
+---
+
+## ETL Pipeline
+
+Three-stage Python pipeline: Postgres → NetworkX → Neo4j AuraDB.
+
+```
+extract.py   →   transform.py   →   load.py
+Postgres          NetworkX           AuraDB
+server-side       DiGraph +          batched MERGE
+cursor            betweenness +      committees first,
+batched reads     Louvain            then donors,
+parquet out       parquet out        then relationships
+```
+
+**Scale:** Johnston runs end-to-end in under 5 minutes. Des Moines (249K contributions) is the next target — the pipeline is designed for it. Server-side cursor batching in `extract.py` keeps memory flat regardless of dataset size.
+
+Each script has human-in-the-loop checkpoints before any write operation. No data moves without confirmation.
 
 ---
 
 ## Stack
 
-![Neo4j](https://img.shields.io/badge/Neo4j-Graph_Database-blue)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Source_Data-blue)
-![Python](https://img.shields.io/badge/Python-ETL-blue)
-
-- **Source:** PostgreSQL — Iowa ECDB public contribution data
-- **Graph:** Neo4j AuraDB — Labeled Property Graph
-- **ETL:** Python — extract, transform, load pipeline with NetworkX graph computation
-- **Analysis:** Cypher queries targeting CQ1 and CQ5
+- **Source:** PostgreSQL — Iowa ECDB public contribution data (`iowa_campaign_contributions_v2_5`)
+- **Transformation:** Python + NetworkX — DiGraph construction, betweenness centrality, Louvain community detection
+- **Graph:** Neo4j AuraDB — Labeled Property Graph, MERGE-safe idempotent writes
+- **Queries:** Cypher — reads pre-computed properties, no GDS dependency
 
 ---
 
@@ -43,8 +90,10 @@ polk-county-graph/
 ├── graph-data-model/
 │   └── graph-data-model-v3.md   ← Node labels, relationship types, property schemas
 ├── etl/
-│   ├── SCHEMA.md                ← Postgres source schema + ETL query skeleton
-│   └── README.md                ← ETL pipeline documentation
+│   ├── extract.py               ← Postgres → parquet (server-side cursor, checkpointed)
+│   ├── transform.py             ← NetworkX graph + betweenness + Louvain → parquet
+│   ├── load.py                  ← AuraDB MERGE writes, batched, checkpointed
+│   └── SCHEMA.md                ← Source schema documentation
 ├── cypher/
 │   └── README.md                ← CQ1 and CQ5 query documentation
 └── README.md
@@ -52,49 +101,22 @@ polk-county-graph/
 
 ---
 
-## Graph Data Model
-
-The [`graph-data-model/`](./graph-data-model/) directory defines the property graph schema governing this implementation — node labels, relationship types, property definitions, and Neo4j constraints.
-
-The Cycle 1 schema is intentionally minimal:
-
-```
-(:Donor)-[:CONTRIBUTED_TO {amount, date, contribution_id}]->(:Committee)
-```
-
-Computed properties written to `:Donor` nodes at load time:
-
-- `betweenness_centrality` — structural indispensability score (CQ1)
-- `louvain_community` — community membership identifier (CQ5)
-
----
-
-## Build Strategy
-
-**Cycle 1** targets Johnston, Iowa (33,275 contributions, 4,461 donors) as the development dataset before expanding to Des Moines (249,923 contributions, 33,258 donors) for the portfolio release.
-
-| Phase             | Dataset    | Goal                                                         |
-| ----------------- | ---------- | ------------------------------------------------------------ |
-| Development       | Johnston   | Validate ETL pipeline, debug graph structure, confirm CQ1/CQ5 queries |
-| Portfolio release | Des Moines | Full structural analysis, Bloom visualization                |
-
----
-
 ## Status
 
-**Cycle 1**
+**Cycle 1 — Johnston dataset · complete**
 
-- [x] Graph data model v3 complete
-- [x] Postgres schema documented (`etl/SCHEMA.md`)
-- [ ] ETL pipeline (Postgres → Neo4j) — Johnston
-- [ ] CQ1: Betweenness Centrality
-- [ ] CQ5: Louvain Community Detection
-- [ ] Graph validation on Johnston dataset
-- [ ] Portfolio release on Des Moines dataset
+- [x] Graph data model v3
+- [x] Postgres source schema documented
+- [x] ETL pipeline — extract, transform, load
+- [x] CQ1: Betweenness Centrality — validated
+- [x] CQ5: Louvain Community Detection — validated
+- [x] Graph live in Neo4j AuraDB
+
+**Next:** Des Moines full dataset (249,923 contributions)
 
 ---
 
 ## About
 
-This project is part of JL Intelligence's applied graph intelligence practice for Iowa political campaigns and organizations.  
-Follow the build: [Substack](https://beingfuturepresent.com)
+Built by [Jeffrey Long](https://jeffreylong.net) — AI-augmented data engineering and graph intelligence.  
+Follow the work: [Being Future Present](https://beingfuturepresent.com)
