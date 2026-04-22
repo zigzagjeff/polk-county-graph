@@ -4,12 +4,13 @@
 .LSOverride
 
 # Credentials & secrets
-*.txt
 *.env
 .env*
 *credentials*
 *secret*
 *password*
+Neo4j-*.txt
+Postgres-*.txt
 
 # Python
 __pycache__/
@@ -17,7 +18,6 @@ __pycache__/
 *.egg-info/
 myenv/
 venv/
-.venv/
 
 # Data artifacts
 *.parquet

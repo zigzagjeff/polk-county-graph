@@ -1,0 +1,10 @@
+# Core data manipulation and database interaction
+pandas>=1.3.0
+sqlalchemy>=1.4.0
+psycopg2-binary>=2.9.0
+
+# HTTP requests for Iowa Socrata API
+requests>=2.25.0
+
+# Numerical library (pandas dependency)
+numpy>=1.20.0
