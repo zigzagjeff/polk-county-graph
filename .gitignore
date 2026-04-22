@@ -1,0 +1,38 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Credentials & secrets
+*.txt
+*.env
+.env*
+*credentials*
+*secret*
+*password*
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+myenv/
+venv/
+.venv/
+
+# Data artifacts
+*.parquet
+*.csv
+*.sql
+1raw/
+2extracted/
+3cleaned/
+4validated/
+5final/
+
+# Logs & checkpoints
+logs/
+*.log
+*.json
+
+# Jupyter
+.ipynb_checkpoints/
