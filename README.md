@@ -1,6 +1,6 @@
 # Polk County Political Contribution Graph
 
-> **391,881 contributions. 54,059 donors. 2,764 committees. 2003–2025.**  
+> **391,881 contributions. 54,059 donors. 2,764 committees. 2003–2026.**  
 > A Neo4j property graph that reveals the structural architecture of political money in the Des Moines metropolitan area — not who wrote the biggest checks, but who holds the network together.
 
 Built on public data from the Iowa Ethics and Campaign Disclosure Board.  
