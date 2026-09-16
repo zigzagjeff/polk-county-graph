@@ -4,7 +4,7 @@
 > A Neo4j property graph that reveals the structural architecture of political money in the Des Moines metropolitan area — not who wrote the biggest checks, but who holds the network together.
 
 Built on public data from the Iowa Ethics and Campaign Disclosure Board.  
-A [Jeffrey Long](https://jeffreylong.net) portfolio project.
+A [Jeffrey Long](https://jlintelligence.net) portfolio project.
 
 ---
 
@@ -118,5 +118,5 @@ polk-county-graph/
 
 ## About
 
-Built by [Jeffrey Long](https://jeffreylong.net) — AI-augmented data engineering and graph intelligence.  
+Built by [Jeffrey Long](https://jlintelligence.net) — AI-augmented data engineering and graph intelligence.  
 Follow the work: [Being Future Present](https://beingfuturepresent.com)
